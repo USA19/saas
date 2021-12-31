@@ -1,4 +1,7 @@
 import * as mongoose from 'mongoose';
+import classModel from './class.model';
+import schoolModel from './school.model';
+import subjectModel from './subject.model';
 const { Schema } = mongoose;
 
 export enum RoleType {
@@ -66,4 +69,25 @@ UserSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`
 });
 
+UserSchema.pre('remove', function (next) {
+  schoolModel.findOneAndUpdate(
+    { teachers: this._id },
+    { $pull: this._id },
+    { multi: true })  //if reference exists in multiple documents 
+    .exec();
+
+  classModel.findOneAndUpdate(
+    { teachers: this._id },
+    { $pull: this._id },
+    { multi: true })  //if reference exists in multiple documents 
+    .exec();
+
+
+  subjectModel.findOneAndUpdate(
+    { teacher: this._id },
+    { teacher: null },
+    { multi: true })  //if reference exists in multiple documents 
+    .exec();
+  next();
+});
 export default mongoose.model("User", UserSchema);
